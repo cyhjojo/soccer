@@ -353,8 +353,8 @@ export default defineComponent({
     const route = useRoute();
     const list1: any = ref([]);
     const list1Statistics: any = ref([]);
-    const type: any = ref('全场')
-    let res1;
+    const type: any = ref('全场');
+    const matchId: any = ref(null);
 
     onMounted(() => {
       console.log(route.query);
@@ -363,7 +363,8 @@ export default defineComponent({
       //   localStorage.getItem(LS_BUILDER_TAB_NAME) || "0"
       // );
       detail.value = JSON.parse(localStorage.getItem("soccer-detail") || "");
-      getDetail(route.query.match_id);
+      matchId.value = route.query.match_id;
+      getDetail();
     });
 
     const onSort = (e) => {
@@ -372,7 +373,7 @@ export default defineComponent({
 
     const onTypeChange = (e) => {
       list1.value = [];
-      handleDatum(res1);
+      getDetail();
     }
 
     const tableRowClassName = ({
@@ -390,9 +391,8 @@ export default defineComponent({
 
     
 
-    const getDetail = (match_id) => {
-      store.fetchScores([match_id]).then((res) => {
-        res1 = res;
+    const getDetail = () => {
+      store.fetchScores([matchId.value], type.value === '半场').then((res) => {
         handleDatum(res);
       });
     };
@@ -428,9 +428,10 @@ export default defineComponent({
         if (da?.is_sum === "min" || da?.is_sum === "max") {
           return;
         }
-        if ((type.value === '全场' && da?.is_half) || (type.value === '半场' && !da?.is_half)) {
-          return;
-        }
+        // console.log(type.value ,(type.value === '全场' && da?.is_half) , (type.value === '半场' && !da?.is_half));
+        // if ((type.value === '半场' && !da?.is_half)) {
+        //   return;
+        // }
         console.log(da, 2222);
         if (!target[da["company_id"]]) {
           target[da["company_id"]] = {};
@@ -545,10 +546,13 @@ export default defineComponent({
               children: [],
             });
           } else {
-            spreads[rank[j]] = temp;
+            spreads[rank[j] - 1] = temp;
           }
         }
         console.log(spreads);
+        if (!list1.value[list1.value.length - 1]) {
+          list1.value[list1.value.length - 1] = {}
+        }
         list1.value[list1.value.length - 1].children = spreads;
       }
       console.log(list1.value, statistics);

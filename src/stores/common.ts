@@ -68,9 +68,10 @@ export const commonStore = () => {
    * @param match_ids 参数  match_ids
    * @returns
    */
-  function fetchScores(match_ids: string[]) {
+  function fetchScores(match_ids: string[], is_half: boolean) {
     return ApiService.post(`${Api}/scores`, {
-      match_ids
+      match_ids,
+      is_half
     })
       .then((res) => handleResult(res))
       .catch(({ response }) => {
