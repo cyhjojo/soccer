@@ -1,6 +1,6 @@
 <template>
   <!--begin::Timeline item-->
-  <div class="timeline-item">
+  <div class="timeline-item" >
     <!--begin::Timeline line-->
     <!-- <div class="timeline-line w-40px"></div> -->
     <!--end::Timeline line-->
@@ -84,12 +84,13 @@
 
 <script lang="ts">
 import { getAssetPath } from "@/core/helpers/assets";
+import { spread } from "axios";
 import { defineComponent } from "vue";
 
 export default defineComponent({
   name: "item-1",
   props: {
-    data: Object,
+    data: Object
   },
   components: {},
   setup() {

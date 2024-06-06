@@ -1,8 +1,9 @@
 <template>
   <!--begin::Timeline-->
+  <div></div>
   <div class="card">
     <!--begin::Card head-->
-    <div class="card-header card-header-stretch px-3">
+    <div class="card-header card-header-center px-3">
       <!--begin::Title-->
       <div class="card-title d-flex align-items-center">
         <KTIcon
@@ -16,6 +17,14 @@
 
       <!--begin::Toolbar-->
       <div class="card-toolbar m-0">
+        <el-checkbox-group v-model="stage" @change="onStageChange">
+          <el-checkbox-button :key="1" :value="1" :label="1">
+            初
+          </el-checkbox-button>
+          <el-checkbox-button :key="2" :value="2" :label="2">
+            即
+          </el-checkbox-button>
+        </el-checkbox-group>
         <!--begin::Tab nav-->
         <ul
           class="nav nav-tabs nav-line-tabs nav-stretch fs-6 border-0 fw-bold d-none"
@@ -85,7 +94,7 @@
         >
           <!--begin::Timeline-->
           <div class="timeline">
-            <template v-for="li in list">
+            <template v-for="li in list" v-bind:key="li?._id">
               <KTActivityItem1 :data="li" @click="view(li)"></KTActivityItem1>
             </template>
             <!-- <KTActivityItem2></KTActivityItem2>
@@ -173,7 +182,6 @@ import KTActivityItem3 from "@/components/activity-timeline-items/Item3.vue";
 import KTActivityItem4 from "@/components/activity-timeline-items/Item4.vue";
 import KTActivityItem5 from "@/components/activity-timeline-items/Item5.vue";
 import KTActivityItem6 from "@/components/activity-timeline-items/Item6.vue";
-import KTActivityItem7 from "@/components/activity-timeline-items/Item7.vue";
 import KTActivityItem8 from "@/components/activity-timeline-items/Item8.vue";
 import { useRouter } from "vue-router";
 import { commonStore } from "@/stores/common";
@@ -187,20 +195,20 @@ export default defineComponent({
     KTActivityItem4,
     KTActivityItem5,
     KTActivityItem6,
-    KTActivityItem7,
     KTActivityItem8,
   },
   setup() {
     const router = useRouter();
     const store = commonStore();
     const list = ref([]);
+    const stage = ref([])
 
     onMounted(() => {
       init();
     });
 
-    const init = () => {
-      store.fetchMatches().then((res) => {
+    const init = (params?) => {
+      store.fetchMatches(params).then((res) => {
         console.log(res);
         list.value = res;
       });
@@ -211,10 +219,24 @@ export default defineComponent({
       // router.push({ name: "detail", query: { match_id: data?.match_id } });
       window.open(`#/detail?match_id=${data?.match_id}`);
     };
+
+    const onStageChange = (e) => {
+      console.log(e)
+      const sum = e?.reduce((accumulator, currentValue) => accumulator + currentValue, 0)
+      let params;
+      if (sum) {
+        params = {stage: sum}
+        init(params)
+      } else {
+        init()
+      }
+    }
     return {
       list,
       view,
       getAssetPath,
+      stage,
+      onStageChange
     };
   },
 });

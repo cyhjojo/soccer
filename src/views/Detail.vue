@@ -73,69 +73,12 @@
           :class="{ active: tabIndex === 0 }"
           id="kt_builder_main"
         >
-          <!-- <div class="table-header">
-            <div class="w-75px w-md-200px">
-              <el-select v-model="selectVal" placeholder="Select" class="w-100">
-                <el-option
-                  v-for="item in options"
-                  :key="item"
-                  :label="item"
-                  :value="item"
-                />
-              </el-select>
-            </div>
-            <div class="th">
-              <span>
-                初<i class="ki-duotone ki-arrow-up">
-                  <span class="path1"></span>
-                  <span class="path2"></span>
-                </i>
-              </span>
-            </div>
-            <div class="th">
-              <span>
-                即<i class="ki-duotone ki-arrow-up">
-                  <span class="path1"></span>
-                  <span class="path2"></span>
-                </i>
-              </span>
-            </div>
+          <div class="radio1">
+            <el-radio-group v-model="type" @change="onTypeChange">
+              <el-radio-button label="全场" value="全场"  />
+              <el-radio-button label="半场" value="半场" />
+            </el-radio-group>
           </div>
-          <div class="d-flex">
-            <ul
-              class="nav nav-tabs nav-pills border-0 flex-column mb-3 mb-md-0 fs-6"
-            >
-              <li
-                class="nav-item w-75px w-md-200px me-0"
-                v-for="(li, idx) in list1"
-              >
-                <a
-                  class="nav-link btn btn-active-light-primary px-0"
-                  :class="{ active: idx === 0 }"
-                  data-bs-toggle="tab"
-                  :href="`#kt_vtab_pane_${idx}`"
-                  >{{ li.name }}</a
-                >
-              </li>
-            </ul>
-            <ul class="nav flex-column mb-3 mb-md-0 fs-6 table-content">
-              <template v-for="(li, idx) in list1">
-                <template v-for="(s, sidx) in li?.spreads">
-                  <li class="nav-item" v-if="!sidx">
-                    <div>{{ s?.begin_score.home_team }}</div>
-                    <div>{{ s?.begin_score.spreads }}</div>
-                    <div>{{ s?.begin_score.away_team }}</div>
-                    <div>{{ s?.end_score.home_team }}</div>
-                    <div>{{ s?.end_score.spreads }}</div>
-                    <div>{{ s?.end_score.away_team }}</div>
-                  </li>
-                </template>
-              </template>
-
-  
-            </ul>
-          </div> -->
-
           <el-table
             :data="list1"
             style="width: 100%"
@@ -151,6 +94,7 @@
               align="center"
             >
               <template #default="scope">
+                <!-- {{ scope.row.is_half}} -->
                 <span style="margin-left: 10px" v-if="scope.row.company_name">{{
                   scope.row.company_name
                 }}</span>
@@ -409,6 +353,8 @@ export default defineComponent({
     const route = useRoute();
     const list1: any = ref([]);
     const list1Statistics: any = ref([]);
+    const type: any = ref('全场')
+    let res1;
 
     onMounted(() => {
       console.log(route.query);
@@ -424,6 +370,11 @@ export default defineComponent({
       console.log(e);
     };
 
+    const onTypeChange = (e) => {
+      list1.value = [];
+      handleDatum(res1);
+    }
+
     const tableRowClassName = ({
       row,
       rowIndex,
@@ -437,8 +388,11 @@ export default defineComponent({
       return "";
     };
 
+    
+
     const getDetail = (match_id) => {
       store.fetchScores([match_id]).then((res) => {
+        res1 = res;
         handleDatum(res);
       });
     };
@@ -472,6 +426,9 @@ export default defineComponent({
       const target = {};
       data.forEach((da) => {
         if (da?.is_sum === "min" || da?.is_sum === "max") {
+          return;
+        }
+        if ((type.value === '全场' && da?.is_half) || (type.value === '半场' && !da?.is_half)) {
           return;
         }
         console.log(da, 2222);
@@ -561,7 +518,6 @@ export default defineComponent({
           }
         }
       });
-      console.log(statistics, 1111111111);
       list1Statistics.value = statistics;
       for (const i in target) {
         const rank = {
@@ -582,7 +538,6 @@ export default defineComponent({
             companyMap[temp?.company_id] = temp?.company_name;
             companyIndex[temp?.company_id] = list1.value.length;
           }
-          console.log(temp);
 
           if (!rank[j]) {
             list1.value.push({
@@ -625,11 +580,19 @@ export default defineComponent({
       getAssetPath,
       list1,
       list1Statistics,
+      type,
+      onTypeChange
     };
   },
 });
 </script>
 <style scoped lang="scss">
+.radio1 {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  margin: 1rem auto;
+}
 .vs {
   width: 75px;
   text-align: center;
@@ -680,7 +643,7 @@ export default defineComponent({
     background-color: #edf4fa;
   }
   &.yellow-row {
-    background-color: #FDFCCC;
+    background-color: #fdfccc;
   }
 }
 .el-table__body-wrapper tr td.el-table-fixed-column--left {

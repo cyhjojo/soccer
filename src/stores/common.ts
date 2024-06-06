@@ -54,8 +54,8 @@ export const commonStore = () => {
    * fetch Matches
    * @returns
    */
-  function fetchMatches() {
-    return ApiService.get(`${Api}/matches`)
+  function fetchMatches(params) {
+    return ApiService.query(`${Api}/matches`, {params})
       .then((res) => handleResult(res))
       .catch(({ response }) => {
         setError(response);
