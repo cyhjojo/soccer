@@ -17,7 +17,7 @@
 
       <!--begin::Toolbar-->
       <div class="card-toolbar m-0">
-        <el-checkbox-group v-model="stage" @change="onStageChange">
+        <el-checkbox-group v-model="stage">
           <el-checkbox-button :key="1" :value="1" :label="1">
             初
           </el-checkbox-button>
@@ -25,6 +25,12 @@
             即
           </el-checkbox-button>
         </el-checkbox-group>
+        <a
+          class="btn btn-sm btn-light-primary ms-2"
+          @click="search"
+          v-loading.fullscreen.lock="fullscreenLoading"
+          >搜索</a
+        >
         <!--begin::Tab nav-->
         <ul
           class="nav nav-tabs nav-line-tabs nav-stretch fs-6 border-0 fw-bold d-none"
@@ -97,70 +103,7 @@
             <template v-for="li in list" v-bind:key="li?._id">
               <KTActivityItem1 :data="li" @click="view(li)"></KTActivityItem1>
             </template>
-            <!-- <KTActivityItem2></KTActivityItem2>
-            <KTActivityItem3></KTActivityItem3>
-            <KTActivityItem4></KTActivityItem4>
-            <KTActivityItem5></KTActivityItem5>
-            <KTActivityItem6></KTActivityItem6>
-            <KTActivityItem7></KTActivityItem7>
-            <KTActivityItem8></KTActivityItem8> -->
-          </div>
-          <!--end::Timeline-->
-        </div>
-        <!--end::Tab panel-->
-
-        <!--begin::Tab panel-->
-        <div
-          id="kt_activity_week"
-          class="card-body p-0 tab-pane fade show"
-          role="tabpanel"
-          aria-labelledby="kt_activity_week_tab"
-        >
-          <!--begin::Timeline-->
-          <div class="timeline">
-            <KTActivityItem2></KTActivityItem2>
-            <KTActivityItem3></KTActivityItem3>
-            <KTActivityItem4></KTActivityItem4>
-            <KTActivityItem5></KTActivityItem5>
-            <KTActivityItem6></KTActivityItem6>
-          </div>
-          <!--end::Timeline-->
-        </div>
-        <!--end::Tab panel-->
-
-        <!--begin::Tab panel-->
-        <div
-          id="kt_activity_month"
-          class="card-body p-0 tab-pane fade show"
-          role="tabpanel"
-          aria-labelledby="kt_activity_month_tab"
-        >
-          <!--begin::Timeline-->
-          <div class="timeline">
-            <KTActivityItem5></KTActivityItem5>
-            <KTActivityItem6></KTActivityItem6>
-            <KTActivityItem8></KTActivityItem8>
-            <KTActivityItem2></KTActivityItem2>
-            <KTActivityItem3></KTActivityItem3>
-            <KTActivityItem4></KTActivityItem4>
-          </div>
-          <!--end::Timeline-->
-        </div>
-        <!--end::Tab panel-->
-
-        <!--begin::Tab panel-->
-        <div
-          id="kt_activity_year"
-          class="card-body p-0 tab-pane fade show"
-          role="tabpanel"
-          aria-labelledby="kt_activity_year_tab"
-        >
-          <!--begin::Timeline-->
-          <div class="timeline">
-            <KTActivityItem3></KTActivityItem3>
-            <KTActivityItem4></KTActivityItem4>
-            <KTActivityItem5></KTActivityItem5>
-            <KTActivityItem6></KTActivityItem6>
+            <el-empty description="暂无数据" v-if="!list.length" />
           </div>
           <!--end::Timeline-->
         </div>
@@ -177,67 +120,92 @@
 import { getAssetPath } from "@/core/helpers/assets";
 import { defineComponent, ref, onMounted } from "vue";
 import KTActivityItem1 from "@/views/soccer/Item1.vue";
-import KTActivityItem2 from "@/components/activity-timeline-items/Item2.vue";
-import KTActivityItem3 from "@/components/activity-timeline-items/Item3.vue";
-import KTActivityItem4 from "@/components/activity-timeline-items/Item4.vue";
-import KTActivityItem5 from "@/components/activity-timeline-items/Item5.vue";
-import KTActivityItem6 from "@/components/activity-timeline-items/Item6.vue";
-import KTActivityItem8 from "@/components/activity-timeline-items/Item8.vue";
-import { useRouter } from "vue-router";
 import { commonStore } from "@/stores/common";
 
 export default defineComponent({
   name: "profile-activity",
   components: {
     KTActivityItem1,
-    KTActivityItem2,
-    KTActivityItem3,
-    KTActivityItem4,
-    KTActivityItem5,
-    KTActivityItem6,
-    KTActivityItem8,
   },
   setup() {
-    const router = useRouter();
+    const fullscreenLoading = ref(false);
     const store = commonStore();
     const list = ref([]);
-    const stage = ref([])
+    const stage = ref([1]);
+    let bak = {};
 
     onMounted(() => {
-      init();
+      bak = JSON.parse(localStorage.getItem("stage") || "{}");
     });
 
     const init = (params?) => {
-      store.fetchMatches(params).then((res) => {
-        console.log(res);
-        list.value = res;
-      });
+      const stage = params?.stage || 0;
+      if (bak[stage] && new Date().getTime() - bak[stage]?.time <= 120000) {
+        console.log(new Date().getTime() - bak[stage]?.time);
+        list.value = bak[stage]?.list;
+        fullscreenLoading.value = false;
+        return;
+      }
+      store
+        .fetchMatches(params)
+        .then((res) => {
+          console.log(res);
+          list.value = res;
+          if (res.length) {
+            bak[stage] = { time: new Date().getTime(), list: list.value };
+            localStorage.setItem("stage", JSON.stringify(bak));
+          }
+
+          fullscreenLoading.value = false;
+        })
+        .catch((err) => {
+          fullscreenLoading.value = false;
+        });
     };
     const view = (data) => {
       console.log(data);
       localStorage.setItem("soccer-detail", JSON.stringify(data));
       // router.push({ name: "detail", query: { match_id: data?.match_id } });
-      window.open(`#/detail?match_id=${data?.match_id}`);
+      // window.open(`#/detail?match_id=${data?.match_id}`);
+      window.open(`https://m.titan007.com/asian/${data?.match_id}.htm`);
     };
 
     const onStageChange = (e) => {
-      console.log(e)
-      const sum = e?.reduce((accumulator, currentValue) => accumulator + currentValue, 0)
+      console.log(e);
+      const sum = e?.reduce(
+        (accumulator, currentValue) => accumulator + currentValue,
+        0
+      );
       let params;
       if (sum) {
-        params = {stage: sum}
-        init(params)
+        params = { stage: sum };
+        init(params);
       } else {
-        init()
+        init();
       }
-    }
+    };
+
+    const search = () => {
+      if (fullscreenLoading.value) {
+        return;
+      }
+      fullscreenLoading.value = true;
+      onStageChange(stage.value);
+    };
     return {
+      fullscreenLoading,
+      search,
       list,
       view,
       getAssetPath,
       stage,
-      onStageChange
+      onStageChange,
     };
   },
 });
 </script>
+<style lang="scss">
+.timeline {
+  min-height: 50ch;
+}
+</style>
